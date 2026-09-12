@@ -13,6 +13,7 @@ import Interview from "./pages/interview/Interview";
 import InterviewReport from "./pages/interview/InterviewReport";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import OAuthCallback from "./pages/auth/OAuthCallback";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

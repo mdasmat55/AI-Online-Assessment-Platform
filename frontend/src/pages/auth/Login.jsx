@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { loginUser } from "../../services/auth.service";
 import { useAuth } from "../../context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -45,6 +46,10 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google?mode=login`;
   };
 
   return (
@@ -226,6 +231,23 @@ const Login = () => {
                 className="w-full rounded-lg bg-violet-600 py-3 font-semibold text-white shadow-md shadow-violet-200 transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Logging in..." : "Login"}
+              </button>
+
+              <div className="my-6 flex items-center gap-4">
+                <div className="h-px flex-1 bg-slate-200" />
+
+                <span className="text-xs font-medium text-slate-400">OR</span>
+
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <FcGoogle className="text-xl" />
+                Continue with Google
               </button>
             </form>
 

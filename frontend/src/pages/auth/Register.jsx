@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { registerUser } from "../../services/auth.service";
 import { useAuth } from "../../context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -16,10 +17,18 @@ const Register = () => {
     education: "",
     skills: "",
   });
-
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const googleError = searchParams.get("error");
+
+    if (googleError) {
+      setError(googleError);
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,10 +68,13 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSignup = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google?mode=signup`;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200">
-
         <div className="relative hidden bg-linear-to-br from-violet-50 via-white to-indigo-50 px-8 py-8 lg:block lg:w-[40%] lg:px-10">
           {/* Decorative dots */}
           <div className="absolute right-8 top-8 grid grid-cols-4 gap-1.5 opacity-40">
@@ -292,6 +304,23 @@ const Register = () => {
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
+
+              <div className="my-5 flex items-center gap-4">
+                <div className="h-px flex-1 bg-slate-200" />
+
+                <span className="text-xs font-medium text-slate-400">OR</span>
+
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignup}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <FcGoogle className="text-xl" />
+                Continue with Google
+              </button>
             </form>
 
             {/* Login */}
@@ -315,7 +344,6 @@ const Register = () => {
     </div>
   );
 };
-
 
 const InputField = ({
   label,
@@ -351,7 +379,6 @@ const InputField = ({
     </div>
   );
 };
-
 
 const Feature = ({ icon, title, description }) => {
   return (

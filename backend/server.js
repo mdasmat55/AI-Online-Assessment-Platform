@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const session = require("express-session");
 
 const { connectDB, disconnectDB } = require("./config/db");
 
@@ -54,6 +55,19 @@ const generalLimiter = rateLimit({
 
 app.use(generalLimiter);
 app.use(express.json({ limit: "1mb" }));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 10 * 60 * 1000,
+    },
+  }),
+);
 
 app.use("/api/users", userRoutes);
 app.use("/api/interviews", interviewRoutes);
