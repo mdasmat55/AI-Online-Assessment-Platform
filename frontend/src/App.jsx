@@ -4,39 +4,54 @@ import Home from "./pages/home/Home";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import OAuthCallback from "./pages/auth/OAuthCallback";
 
 import Dashboard from "./pages/dashboard/Dashboard";
 import Profile from "./pages/profile/Profile";
 
-import InterviewSetup from "./pages/interview/InterviewSetup";
-import Interview from "./pages/interview/Interview";
-import InterviewReport from "./pages/interview/InterviewReport";
+import AssessmentSetup from "./pages/assessment/AssessmentSetup";
+import Assessment from "./pages/assessment/Assessment";
+import AssessmentResult from "./pages/assessment/AssessmentResult";
+import AssessmentsReport from "./pages/assessment/AssessmentsReport";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import OAuthCallback from "./pages/auth/OAuthCallback";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
+
         <Route path="/" element={<Home />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
+
         <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* Protected routes */}
+
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+
           <Route path="/profile" element={<Profile />} />
 
-          <Route path="/interview/setup" element={<InterviewSetup />} />
-
-          <Route path="/interview/:interviewId/start" element={<Interview />} />
+          <Route path="/assessment/setup" element={<AssessmentSetup />} />
 
           <Route
-            path="/interview/:interviewId/report"
-            element={<InterviewReport />}
+            path="/assessment/:assessmentId/attempt/:attemptId"
+            element={<Assessment />}
+          />
+
+          <Route
+            path="/assessment/:assessmentId/attempt/:attemptId/result"
+            element={<AssessmentResult />}
+          />
+
+          <Route
+            path="/assessment/:assessmentId/attempt/:attemptId/report"
+            element={<AssessmentsReport />}
           />
         </Route>
       </Routes>

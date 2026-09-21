@@ -4,10 +4,21 @@ const { protect } = require("../middlewares/auth.middleware");
 
 const { aiLimiter } = require("../middlewares/rateLimit.middleware");
 
-const { createReport } = require("../controllers/report.controller");
+const {
+  createReport,
+  getReportByAttemptId,
+  getMyReports,
+} = require("../controllers/report.controller");
 
 const router = express.Router();
 
-router.post("/:interviewId", protect, aiLimiter, createReport);
+// Get all reports of the logged-in user
+router.get("/my-reports", protect, getMyReports);
+
+// Generate report for a completed assessment attempt
+router.post("/:attemptId", protect, aiLimiter, createReport);
+
+// Get report for a specific attempt
+router.get("/:attemptId", protect, getReportByAttemptId);
 
 module.exports = router;

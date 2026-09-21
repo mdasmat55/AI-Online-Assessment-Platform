@@ -4,134 +4,107 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const isValidScore = (value, min, max) =>
-  typeof value === "number" &&
-  Number.isFinite(value) &&
-  value >= min &&
-  value <= max;
+const generateAssessmentReport = async ({ assessment, attempt }) => {
+  const questions = assessment.questions.map((question) => {
+    const answer = attempt.answers.find(
+      (item) => item.questionId.toString() === question._id.toString(),
+    );
 
-const generateInterviewReport = async (interview) => {
-  const answeredQuestions = interview.questions.filter((q) =>
-    q.userAnswer?.trim(),
-  );
-
-  if (answeredQuestions.length === 0) {
-    throw new Error("No answered questions available for evaluation");
-  }
-
-  const questions = answeredQuestions
-    .map(
-      (q, index) => `
-Question ${index + 1}:
-${q.question}
-
-Candidate Answer:
-${q.userAnswer}
-`,
-    )
-    .join("\n-------------------\n");
+    return {
+      question: question.question,
+      type: question.type,
+      category: question.category,
+      marks: question.marks,
+      answer: answer?.answer || "",
+      score: answer?.score ?? 0,
+      feedback: answer?.feedback || "",
+    };
+  });
 
   const prompt = `
-You are an expert interview evaluator.
+You are an expert online assessment performance analyst.
 
-Evaluate the candidate's completed interview.
+Analyze the completed assessment below and generate a useful performance report.
 
-Candidate Role:
-${interview.role}
+ASSESSMENT:
+Title: ${assessment.title}
+Difficulty: ${assessment.questions[0]?.difficulty || "medium"}
+Total Marks: ${assessment.totalMarks}
 
-Experience:
-${interview.experience}
+QUESTIONS AND ANSWERS:
+${questions
+  .map(
+    (item, index) => `
+Question ${index + 1}
+Type: ${item.type}
+Topic: ${item.category || "General"}
+Question: ${item.question}
+Candidate Answer: ${item.answer || "Not answered"}
+Score: ${item.score}/${item.marks}
+Evaluator Feedback: ${item.feedback || "No feedback"}
+`,
+  )
+  .join("\n-------------------\n")}
 
-Interview Type:
-${interview.interviewType}
+Generate a performance report.
 
-Difficulty:
-${interview.difficulty}
+IMPORTANT RULES:
 
-Topics:
-${interview.topics.join(", ")}
+1. Base the report ONLY on the provided questions,
+   answers, scores and feedback.
 
-Interview Questions and Candidate Answers:
-${questions}
+2. Do not invent information about the candidate.
 
-Your task has TWO parts.
+3. Identify the candidate's strongest areas.
 
-PART 1 — Evaluate every answered question
+4. Identify weak areas that need improvement.
 
-For each question, evaluate the candidate's answer using:
+5. Give practical and actionable recommendations.
 
-- correctness: 0-10
-- relevance: 0-10
-- clarity: 0-10
-- completeness: 0-10
-- technicalDepth: 0-10
-- overall: 0-10
+6. Analyze performance by topic/category.
 
-Also provide:
-- feedback
-- strengths
-- weaknesses
+7. Separate MCQ performance from subjective performance.
 
-PART 2 — Generate the final interview report
+8. The overall score and percentage should reflect
+   the actual assessment result.
 
-The report must contain:
+9. Keep the report concise and useful.
 
-- overallScore: 0-100
-- technicalScore: 0-100
-- problemSolvingScore: 0-100
-- clarityScore: 0-100
-- completenessScore: 0-100
-- strengths: 3-5 specific points
-- weaknesses: 2-5 specific points
-- recommendations: 3-5 actionable recommendations
-- summary: concise overall assessment
+10. Return ONLY valid JSON.
 
-Rules:
-
-- Evaluate ONLY the questions and answers provided.
-- Do not invent information about the candidate.
-- Keep question-level evaluations consistent with the final scores.
-- All question-level scores must be between 0 and 10.
-- All final report scores must be between 0 and 100.
-- Return exactly one evaluation for every answered question.
-- The evaluation order must match the question order.
-- If an answer is weak, score it accordingly.
-- Do not give artificially high scores.
-- Do not include answers to the interview questions.
-
-Return ONLY valid JSON in exactly this format:
+Return exactly this structure:
 
 {
-  "evaluations": [
+  "mcqScore": 0,
+  "mcqTotalMarks": 0,
+  "subjectiveScore": 0,
+  "subjectiveTotalMarks": 0,
+  "topicPerformance": [
     {
-      "questionIndex": 0,
-      "correctness": 0,
-      "relevance": 0,
-      "clarity": 0,
-      "completeness": 0,
-      "technicalDepth": 0,
-      "overall": 0,
-      "feedback": "",
-      "strengths": [],
-      "weaknesses": []
+      "topic": "Topic name",
+      "score": 0,
+      "maxScore": 0,
+      "percentage": 0
     }
   ],
-  "report": {
-    "overallScore": 0,
-    "technicalScore": 0,
-    "problemSolvingScore": 0,
-    "clarityScore": 0,
-    "completenessScore": 0,
-    "strengths": [],
-    "weaknesses": [],
-    "recommendations": [],
-    "summary": ""
-  }
+  "strengths": [
+    "Strength 1",
+    "Strength 2"
+  ],
+  "weaknesses": [
+    "Weakness 1",
+    "Weakness 2"
+  ],
+  "recommendations": [
+    "Recommendation 1",
+    "Recommendation 2"
+  ],
+  "summary": "Short overall performance summary"
 }
 `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.6-flash",
+    model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -139,7 +112,7 @@ Return ONLY valid JSON in exactly this format:
   });
 
   if (!response?.text) {
-    throw new Error("AI did not return a response");
+    throw new Error("Gemini returned an empty report");
   }
 
   let result;
@@ -147,92 +120,82 @@ Return ONLY valid JSON in exactly this format:
   try {
     result = JSON.parse(response.text);
   } catch (error) {
-    throw new Error("AI returned invalid JSON");
+    throw new Error("Gemini returned invalid report JSON");
   }
 
   if (!result || typeof result !== "object") {
-    throw new Error("AI returned an invalid report response");
+    throw new Error("Gemini returned an invalid report");
   }
 
-  if (!Array.isArray(result.evaluations)) {
-    throw new Error("AI response does not contain valid evaluations");
+  if (!Array.isArray(result.topicPerformance)) {
+    throw new Error("Invalid topic performance data");
   }
 
-  if (result.evaluations.length !== answeredQuestions.length) {
-    throw new Error(
-      `AI returned ${result.evaluations.length} evaluations instead of ${answeredQuestions.length}`,
-    );
+  if (!Array.isArray(result.strengths)) {
+    throw new Error("Invalid strengths data");
   }
 
-  result.evaluations.forEach((evaluation, index) => {
-    if (
-      evaluation.questionIndex !== index ||
-      !isValidScore(evaluation.correctness, 0, 10) ||
-      !isValidScore(evaluation.relevance, 0, 10) ||
-      !isValidScore(evaluation.clarity, 0, 10) ||
-      !isValidScore(evaluation.completeness, 0, 10) ||
-      !isValidScore(evaluation.technicalDepth, 0, 10) ||
-      !isValidScore(evaluation.overall, 0, 10)
-    ) {
-      throw new Error(
-        `AI returned an invalid evaluation for question ${index + 1}`,
-      );
-    }
-
-    if (
-      typeof evaluation.feedback !== "string" ||
-      !Array.isArray(evaluation.strengths) ||
-      !Array.isArray(evaluation.weaknesses)
-    ) {
-      throw new Error(
-        `AI returned incomplete evaluation data for question ${index + 1}`,
-      );
-    }
-  });
-
-  if (!result.report || typeof result.report !== "object") {
-    throw new Error("AI response does not contain a valid final report");
+  if (!Array.isArray(result.weaknesses)) {
+    throw new Error("Invalid weaknesses data");
   }
 
-  const report = result.report;
-
-  const reportScores = [
-    report.overallScore,
-    report.technicalScore,
-    report.problemSolvingScore,
-    report.clarityScore,
-    report.completenessScore,
-  ];
-
-  if (!reportScores.every((score) => isValidScore(score, 0, 100))) {
-    throw new Error("AI returned invalid final report scores");
+  if (!Array.isArray(result.recommendations)) {
+    throw new Error("Invalid recommendations data");
   }
 
-  if (
-    !Array.isArray(report.strengths) ||
-    !Array.isArray(report.weaknesses) ||
-    !Array.isArray(report.recommendations) ||
-    typeof report.summary !== "string"
-  ) {
-    throw new Error("AI returned incomplete final report data");
+  if (typeof result.summary !== "string") {
+    throw new Error("Invalid report summary");
   }
+
+  const mcqScore = Number(result.mcqScore) || 0;
+
+  const mcqTotalMarks = Number(result.mcqTotalMarks) || 0;
+
+  const subjectiveScore = Number(result.subjectiveScore) || 0;
+
+  const subjectiveTotalMarks = Number(result.subjectiveTotalMarks) || 0;
+
+  if (mcqScore < 0 || mcqScore > mcqTotalMarks) {
+    throw new Error("Invalid MCQ score");
+  }
+
+  if (subjectiveScore < 0 || subjectiveScore > subjectiveTotalMarks) {
+    throw new Error("Invalid subjective score");
+  }
+
+  const actualScore = attempt.score || 0;
+
+  const totalMarks = assessment.totalMarks || 0;
+
+  const percentage =
+    totalMarks > 0 ? Math.round((actualScore / totalMarks) * 100) : 0;
 
   return {
-    evaluations: result.evaluations,
-    report: {
-      overallScore: report.overallScore,
-      technicalScore: report.technicalScore,
-      problemSolvingScore: report.problemSolvingScore,
-      clarityScore: report.clarityScore,
-      completenessScore: report.completenessScore,
-      strengths: report.strengths,
-      weaknesses: report.weaknesses,
-      recommendations: report.recommendations,
-      summary: report.summary,
-    },
+    overallScore: actualScore,
+    totalMarks,
+
+    percentage,
+
+    mcqScore,
+
+    mcqTotalMarks,
+
+    subjectiveScore,
+
+    subjectiveTotalMarks,
+
+    topicPerformance: result.topicPerformance,
+
+    strengths: result.strengths,
+
+    weaknesses: result.weaknesses,
+
+    recommendations: result.recommendations,
+
+    summary: result.summary.trim(),
   };
 };
 
 module.exports = {
-  generateInterviewReport,
+  generateAssessmentReport,
 };

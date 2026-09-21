@@ -1,12 +1,48 @@
 const mongoose = require("mongoose");
 
+const topicPerformanceSchema = new mongoose.Schema(
+  {
+    topic: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    score: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    maxScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    percentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+  },
+  { _id: false },
+);
+
 const reportSchema = new mongoose.Schema(
   {
-    interview: {
+    attempt: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Interview",
+      ref: "AssessmentAttempt",
       required: true,
       unique: true,
+    },
+
+    assessment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assessment",
+      required: true,
     },
 
     user: {
@@ -18,26 +54,49 @@ const reportSchema = new mongoose.Schema(
     overallScore: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
-    technicalScore: {
+    totalMarks: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
-    problemSolvingScore: {
+    percentage: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
 
-    clarityScore: {
+    mcqScore: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
-    completenessScore: {
+    mcqTotalMarks: {
       type: Number,
       default: 0,
+      min: 0,
+    },
+
+    subjectiveScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    subjectiveTotalMarks: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    topicPerformance: {
+      type: [topicPerformanceSchema],
+      default: [],
     },
 
     strengths: {

@@ -1,119 +1,50 @@
-const Interview = require("../models/interview.model");
+const AssessmentAttempt = require("../models/assessmentAttempt.model");
+const Assessment = require("../models/assessment.model");
 const Report = require("../models/report.model");
 
-const { generateInterviewReport } = require("../services/report.service");
-const { sendError } = require("../middlewares/error.middleware");
+const { generateAssessmentReport } = require("../services/report.service");
 
 const createReport = async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.interviewId);
+    const { attemptId } = req.params;
 
-    if (!interview) {
+    const attempt = await AssessmentAttempt.findById(attemptId);
+
+    if (!attempt) {
       return res.status(404).json({
         success: false,
-        message: "Interview not found",
+        message: "Assessment attempt not found",
       });
     }
 
-    if (interview.user.toString() !== req.user._id.toString()) {
+    if (attempt.candidate.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Not authorized to access this interview",
+        message: "Not authorized to access this assessment attempt",
       });
     }
 
-    if (interview.status !== "completed") {
+    if (attempt.status !== "completed") {
       return res.status(400).json({
         success: false,
-        message: "Complete the interview before generating a report",
+        message: "Complete the assessment before generating a report",
       });
     }
 
-    const answeredQuestions = interview.questions.filter((question) =>
-      question.userAnswer?.trim(),
-    );
+    const assessment = await Assessment.findById(attempt.assessment);
 
-    if (answeredQuestions.length === 0) {
-      const existingReport = await Report.findOne({
-        interview: interview._id,
-      });
-
-      if (existingReport) {
-        if (interview.score !== existingReport.overallScore) {
-          interview.score = existingReport.overallScore;
-          await interview.save();
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "Report already exists",
-          report: existingReport,
-        });
-      }
-
-      let report;
-
-      try {
-        report = await Report.create({
-          interview: interview._id,
-          user: req.user._id,
-
-          overallScore: 0,
-          technicalScore: 0,
-          problemSolvingScore: 0,
-          clarityScore: 0,
-          completenessScore: 0,
-
-          strengths: [],
-          weaknesses: ["No questions were answered."],
-          recommendations: [
-            "Attempt the interview questions to receive a meaningful performance evaluation.",
-          ],
-
-          summary:
-            "The interview was completed without answering any questions, so no performance evaluation is available.",
-        });
-      } catch (error) {
-        // A second, near-simultaneous request (e.g. React StrictMode's
-        // double effect-invocation in dev) may have created the report
-        // a moment earlier. Return that one instead of crashing.
-        if (error.code === 11000) {
-          const raceReport = await Report.findOne({
-            interview: interview._id,
-          });
-
-          return res.status(200).json({
-            success: true,
-            message: "Report already exists",
-            report: raceReport,
-          });
-        }
-
-        throw error;
-      }
-
-      interview.score = 0;
-      await interview.save();
-
-      return res.status(201).json({
-        success: true,
-        message: "Interview report generated successfully",
-        report,
+    if (!assessment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assessment not found",
       });
     }
 
     const existingReport = await Report.findOne({
-      interview: interview._id,
+      attempt: attempt._id,
     });
 
     if (existingReport) {
-      // Self-heal older interviews saved before scores were kept in sync
-      // (dashboard score used to be on a 0-10 scale instead of 0-100).
-      if (interview.score !== existingReport.overallScore) {
-        interview.score = existingReport.overallScore;
-        await interview.save();
-      }
-
       return res.status(200).json({
         success: true,
         message: "Report already exists",
@@ -121,84 +52,147 @@ const createReport = async (req, res) => {
       });
     }
 
-    const reportData = await generateInterviewReport(interview);
-
-    const evaluations = reportData.evaluations;
-    const reportDataFinal = reportData.report;
-
-    // Save each question-level evaluation
-    evaluations.forEach((evaluation) => {
-      const question = interview.questions[evaluation.questionIndex];
-
-      if (question) {
-        question.evaluation = {
-          correctness: evaluation.correctness,
-          relevance: evaluation.relevance,
-          clarity: evaluation.clarity,
-          completeness: evaluation.completeness,
-          technicalDepth: evaluation.technicalDepth,
-          overall: evaluation.overall,
-          feedback: evaluation.feedback,
-          strengths: evaluation.strengths,
-          weaknesses: evaluation.weaknesses,
-        };
-      }
+    const reportData = await generateAssessmentReport({
+      assessment,
+      attempt,
     });
 
-    await interview.save();
-
-    let report;
-
-    try {
-      report = await Report.create({
-        interview: interview._id,
-        user: req.user._id,
-
-        overallScore: reportDataFinal.overallScore,
-        technicalScore: reportDataFinal.technicalScore,
-        problemSolvingScore: reportDataFinal.problemSolvingScore,
-        clarityScore: reportDataFinal.clarityScore,
-        completenessScore: reportDataFinal.completenessScore,
-
-        strengths: reportDataFinal.strengths,
-        weaknesses: reportDataFinal.weaknesses,
-        recommendations: reportDataFinal.recommendations,
-
-        summary: reportDataFinal.summary,
+    if (!reportData || typeof reportData !== "object") {
+      return res.status(500).json({
+        success: false,
+        message: "AI returned an invalid assessment report",
       });
-    } catch (error) {
-      // Another request may have created the report
-      // while this request was generating it.
-      if (error.code === 11000) {
-        const existingReport = await Report.findOne({
-          interview: interview._id,
-        });
-
-        return res.status(200).json({
-          success: true,
-          message: "Report already exists",
-          report: existingReport,
-        });
-      }
-
-      throw error;
     }
 
-    // Keep the interview's score (used everywhere else, e.g. the dashboard)
-    // in sync with the authoritative score shown on the report page.
-    interview.score = report.overallScore;
-    await interview.save();
+    const report = await Report.create({
+      attempt: attempt._id,
+      assessment: assessment._id,
+      user: req.user._id,
 
-    res.status(201).json({
+      overallScore: Number(reportData.overallScore) || attempt.score || 0,
+
+      totalMarks: assessment.totalMarks || 0,
+
+      percentage:
+        Number(reportData.percentage) ||
+        (assessment.totalMarks
+          ? Math.round(((attempt.score || 0) / assessment.totalMarks) * 100)
+          : 0),
+
+      mcqScore: Number(reportData.mcqScore) || 0,
+
+      mcqTotalMarks: Number(reportData.mcqTotalMarks) || 0,
+
+      subjectiveScore: Number(reportData.subjectiveScore) || 0,
+
+      subjectiveTotalMarks: Number(reportData.subjectiveTotalMarks) || 0,
+
+      topicPerformance: Array.isArray(reportData.topicPerformance)
+        ? reportData.topicPerformance
+        : [],
+
+      strengths: Array.isArray(reportData.strengths)
+        ? reportData.strengths
+        : [],
+
+      weaknesses: Array.isArray(reportData.weaknesses)
+        ? reportData.weaknesses
+        : [],
+
+      recommendations: Array.isArray(reportData.recommendations)
+        ? reportData.recommendations
+        : [],
+
+      summary:
+        typeof reportData.summary === "string" ? reportData.summary.trim() : "",
+    });
+
+    return res.status(201).json({
       success: true,
-      message: "Interview report generated successfully",
+      message: "Assessment report generated successfully",
       report,
     });
   } catch (error) {
-    sendError(res, error, "Failed to generate interview report");
+    if (error.code === 11000) {
+      try {
+        const existingReport = await Report.findOne({
+          attempt: req.params.attemptId,
+        });
+
+        if (existingReport) {
+          return res.status(200).json({
+            success: true,
+            message: "Report already exists",
+            report: existingReport,
+          });
+        }
+      } catch (lookupError) {
+        console.error("Failed to retrieve existing report:", lookupError);
+      }
+    }
+
+    console.error("Assessment report generation error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to generate assessment report",
+    });
+  }
+};
+
+const getReportByAttemptId = async (req, res) => {
+  try {
+    const report = await Report.findOne({
+      attempt: req.params.attemptId,
+      user: req.user._id,
+    }).populate("assessment", "title description duration totalMarks");
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: "Assessment report not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      report,
+    });
+  } catch (error) {
+    console.error("Get assessment report error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch assessment report",
+    });
+  }
+};
+
+const getMyReports = async (req, res) => {
+  try {
+    const reports = await Report.find({
+      user: req.user._id,
+    })
+      .populate("assessment", "title description duration totalMarks")
+      .populate("attempt", "score status startedAt completedAt")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      reports,
+    });
+  } catch (error) {
+    console.error("Get my reports error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch assessment reports",
+    });
   }
 };
 
 module.exports = {
   createReport,
+  getReportByAttemptId,
+  getMyReports,
 };
