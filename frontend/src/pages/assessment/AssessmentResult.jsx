@@ -285,11 +285,29 @@ const AssessmentResult = () => {
           <div className="grid gap-3 sm:grid-cols-3">
             <button
               type="button"
-              onClick={() =>
-                navigate(
-                  `/assessment/${assessmentId}/attempt/${attemptId}/report`,
-                )
-              }
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setError("");
+
+                  // Generate the detailed assessment report
+                  await api.post(`/reports/${attemptId}`);
+
+                  // Open the detailed report page
+                  navigate(
+                    `/assessment/${assessmentId}/attempt/${attemptId}/report`,
+                  );
+                } catch (error) {
+                  console.error("Failed to generate assessment report:", error);
+
+                  setError(
+                    error.response?.data?.message ||
+                      "Failed to generate assessment report.",
+                  );
+
+                  setLoading(false);
+                }
+              }}
               className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-violet-200 transition hover:bg-violet-700"
             >
               View Detailed Report
