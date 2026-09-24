@@ -174,7 +174,7 @@ const AssessmentsReport = () => {
               </p>
             </div>
 
-            <div className="flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-full border-[10px] border-violet-100 bg-violet-50">
+            <div className="flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-full border-10 border-violet-100 bg-violet-50">
               <p className="text-4xl font-bold text-violet-700">
                 {percentage}%
               </p>
