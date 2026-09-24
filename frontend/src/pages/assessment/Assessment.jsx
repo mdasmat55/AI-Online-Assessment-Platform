@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 
 const Assessment = () => {
   const { assessmentId, attemptId } = useParams();
   const navigate = useNavigate();
+
+  const autoSubmitTriggered = useRef(false);
 
   const [assessment, setAssessment] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -103,51 +105,56 @@ const Assessment = () => {
     [attemptId, answers],
   );
 
-  const handleCompleteAssessment = useCallback(async () => {
-    if (submitting) {
-      return;
-    }
+  const handleCompleteAssessment = useCallback(
+    async (isAutoSubmit = false) => {
+      if (submitting) {
+        return;
+      }
 
-    try {
-      setSubmitting(true);
-      setError("");
+      try {
+        setSubmitting(true);
+        setError("");
 
-      if (currentQuestion) {
-        const saved = await saveAnswer(currentQuestion._id);
+        if (currentQuestion) {
+          const saved = await saveAnswer(currentQuestion._id);
 
-        if (!saved) {
-          setSubmitting(false);
-          return;
+          if (!saved && !isAutoSubmit) {
+            setSubmitting(false);
+            return;
+          }
         }
+
+        const response = await api.post(`/attempts/${attemptId}/complete`);
+
+        if (!response.data?.result) {
+          throw new Error("Assessment result was not returned.");
+        }
+
+        navigate(`/assessment/${assessmentId}/attempt/${attemptId}/result`, {
+          replace: true,
+          state: {
+            result: response.data.result,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to complete assessment:", error);
+
+        setError(
+          error.response?.data?.message || "Failed to submit assessment.",
+        );
+
+        setSubmitting(false);
       }
-
-      const response = await api.post(`/attempts/${attemptId}/complete`);
-
-      if (!response.data?.result) {
-        throw new Error("Assessment result was not returned.");
-      }
-
-      navigate(`/assessment/${assessmentId}/attempt/${attemptId}/result`, {
-        replace: true,
-        state: {
-          result: response.data.result,
-        },
-      });
-    } catch (error) {
-      console.error("Failed to complete assessment:", error);
-
-      setError(error.response?.data?.message || "Failed to submit assessment.");
-
-      setSubmitting(false);
-    }
-  }, [
-    submitting,
-    currentQuestion,
-    saveAnswer,
-    attemptId,
-    assessmentId,
-    navigate,
-  ]);
+    },
+    [
+      submitting,
+      currentQuestion,
+      saveAnswer,
+      attemptId,
+      assessmentId,
+      navigate,
+    ],
+  );
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || submitting) {
@@ -169,8 +176,14 @@ const Assessment = () => {
   }, [timeLeft, submitting]);
 
   useEffect(() => {
-    if (timeLeft === 0 && assessment && !submitting) {
-      handleCompleteAssessment();
+    if (
+      timeLeft === 0 &&
+      assessment &&
+      !submitting &&
+      !autoSubmitTriggered.current
+    ) {
+      autoSubmitTriggered.current = true;
+      handleCompleteAssessment(true);
     }
   }, [timeLeft, assessment, submitting, handleCompleteAssessment]);
 
@@ -453,7 +466,7 @@ const Assessment = () => {
               Previous
             </button>
 
-            <div className="order-first text-center text-xs text-slate-400 sm:order-none">
+            <div className="order-first text-center text-xs text-slate-400 sm:order-0">
               {saving
                 ? "Saving answer..."
                 : "Answer is saved when you navigate"}
