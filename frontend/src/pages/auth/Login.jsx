@@ -76,10 +76,10 @@ const Login = () => {
             </div>
 
             <div>
-              <h1 className="text-lg font-bold text-slate-900">AI Interview</h1>
+              <h1 className="text-lg font-bold text-slate-900">AI Assessment</h1>
 
               <p className="text-[10px] font-medium tracking-widest text-slate-500">
-                INTERVIEW PLATFORM
+                ASSESSMENT PLATFORM
               </p>
             </div>
           </Link>
@@ -99,8 +99,8 @@ const Login = () => {
             </h2>
 
             <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600">
-              Continue your interview preparation, practice with AI, and improve
-              your performance one interview at a time.
+              Continue your assessment preparation, practice with AI, and improve
+              your performance one Assessment at a time.
             </p>
           </div>
 
@@ -108,8 +108,8 @@ const Login = () => {
           <div className="relative z-10 mt-9 space-y-5">
             <Feature
               icon="🤖"
-              title="AI-Powered Interviews"
-              description="Practice with realistic interview questions."
+              title="AI-Powered Assessments"
+              description="Practice with realistic assessment questions."
             />
 
             <Feature
@@ -121,7 +121,7 @@ const Login = () => {
             <Feature
               icon="✦"
               title="Track Your Progress"
-              description="See how your interview performance improves."
+              description="See how your assessment performance improves."
             />
           </div>
         </div>
@@ -135,7 +135,7 @@ const Login = () => {
                   🤖
                 </div>
 
-                <span className="font-bold text-slate-900">AI Interview</span>
+                <span className="font-bold text-slate-900">AI Assessment</span>
               </Link>
 
               <Link
@@ -157,7 +157,7 @@ const Login = () => {
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                Login to continue your interview preparation.
+                Login to continue your OA preparation.
               </p>
             </div>
 

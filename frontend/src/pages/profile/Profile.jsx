@@ -94,7 +94,7 @@ const Profile = () => {
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            Manage your information and interview preferences.
+            Manage your information and assessment preferences.
           </p>
         </div>
 
@@ -157,7 +157,7 @@ const Profile = () => {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Information used to personalize your interview experience.
+              Information used to personalize your OA experience.
             </p>
           </div>
 

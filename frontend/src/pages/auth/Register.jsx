@@ -96,10 +96,10 @@ const Register = () => {
             </div>
 
             <div>
-              <h1 className="text-lg font-bold text-slate-900">AI Interview</h1>
+              <h1 className="text-lg font-bold text-slate-900">AI Assessment</h1>
 
               <p className="text-[10px] font-medium tracking-widest text-slate-500">
-                INTERVIEW PLATFORM
+                ASSESSMENT PLATFORM
               </p>
             </div>
           </Link>
@@ -107,7 +107,7 @@ const Register = () => {
           {/* Hero */}
           <div className="relative z-10 mt-12">
             <p className="mb-3 text-xs font-semibold text-violet-600">
-              AI-POWERED INTERVIEW PREPARATION
+              AI-POWERED ONLINE ASSESSMENT PREPARATION
             </p>
 
             <h2 className="text-4xl font-bold leading-tight tracking-tight text-slate-900">
@@ -119,8 +119,8 @@ const Register = () => {
             </h2>
 
             <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600">
-              Practice realistic interviews, receive personalized feedback, and
-              improve your interview performance.
+              Practice realistic Online Assessments, receive personalized feedback, and
+              improve your OA performance.
             </p>
           </div>
 
@@ -128,8 +128,8 @@ const Register = () => {
           <div className="relative z-10 mt-9 space-y-5">
             <Feature
               icon="🤖"
-              title="AI-Powered Interviews"
-              description="Practice with realistic interview questions."
+              title="AI-Powered Assessments"
+              description="Practice with realistic assessment questions."
             />
 
             <Feature
@@ -141,7 +141,7 @@ const Register = () => {
             <Feature
               icon="✦"
               title="Detailed Reports"
-              description="Track your performance after every interview."
+              description="Track your performance after every assessment."
             />
           </div>
         </div>
@@ -155,7 +155,7 @@ const Register = () => {
                   🤖
                 </div>
 
-                <span className="font-bold text-slate-900">AI Interview</span>
+                <span className="font-bold text-slate-900">AI ASSESSMENT</span>
               </Link>
 
               <Link
@@ -177,7 +177,7 @@ const Register = () => {
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                Create your profile and start preparing for your next interview
+                Create your profile and start preparing for your next Online Assessment
                 with AI.
               </p>
             </div>

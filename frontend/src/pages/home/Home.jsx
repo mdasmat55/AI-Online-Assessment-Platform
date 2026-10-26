@@ -16,11 +16,11 @@ const Home = () => {
 
             <div>
               <p className="text-base font-bold leading-tight text-slate-900">
-                AI Interview
+                AI Assessment
               </p>
 
               <p className="text-[9px] font-medium tracking-widest text-slate-400">
-                INTERVIEW PLATFORM
+                ASSESSMENT PLATFORM
               </p>
             </div>
           </Link>
@@ -55,21 +55,21 @@ const Home = () => {
               <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
 
               <span className="text-xs font-semibold text-violet-700">
-                AI-POWERED INTERVIEW PRACTICE
+                AI-POWERED OA PRACTICE
               </span>
             </div>
 
             {/* Heading */}
 
             <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Practice interviews.
+              Practice assessments.
               <span className="block text-violet-600">Build confidence.</span>
             </h1>
 
             {/* Description */}
 
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
-              Practice realistic interviews with an AI interviewer, get
+              Practice realistic OA questions, get
               evaluated on your answers, and understand exactly where you can
               improve.
             </p>
@@ -97,8 +97,8 @@ const Home = () => {
           <div className="mx-auto mt-16 grid max-w-5xl gap-4 md:grid-cols-3">
             <FeatureCard
               icon="🤖"
-              title="AI Interviews"
-              description="Practice interviews tailored to your target role and interview type."
+              title="AI Assessments"
+              description="Practice assessments tailored to your target role and assessment type."
             />
 
             <FeatureCard
@@ -120,7 +120,7 @@ const Home = () => {
 
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
-          AI Interview Platform
+          AI Assessment Platform
         </div>
       </footer>
     </div>
